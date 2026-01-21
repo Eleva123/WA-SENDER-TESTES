@@ -26,10 +26,12 @@ jobs:
           
       - name: Baixar EdgeDriver
         run: |
-          EDGE_VERSION=$(curl -s "https://msedgedriver.azureedge.net/LATEST_STABLE" | tr -d '\r\n')
+          # Use a more reliable API to get the version
+          EDGE_VERSION=$(curl -s "https://edgeupdates.microsoft.com/api/products?target=Stable" | jq -r '.[0].Releases[] | select(.Platform=="Windows" and .Architecture=="x64") | .ProductVersion' | head -1)
           MAJOR=$(echo $EDGE_VERSION | cut -d'.' -f1)
           echo "Edge version: $EDGE_VERSION (Major: $MAJOR)"
-          curl -LO "https://msedgedriver.azureedge.net/${EDGE_VERSION}/edgedriver_win64.zip"
+          # Use the blob storage URL which is more reliable than the CDN alias
+          curl -LO "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/${EDGE_VERSION}/edgedriver_win64.zip"
           unzip -o edgedriver_win64.zip
           mv msedgedriver.exe ms${MAJOR}.exe
           rm -rf edgedriver_win64.zip Driver_Notes
