@@ -2,7 +2,8 @@ name: Atualizar Drivers
 
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 9 * * *'    # 06:00 AM Brasilia
+    - cron: '30 15 * * *'  # 12:30 PM Brasilia
   workflow_dispatch:
 
 jobs:
