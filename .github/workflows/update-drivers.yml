@@ -21,25 +21,33 @@ jobs:
           echo "Chrome version: $VERSION (Major: $MAJOR)"
           curl -LO "https://storage.googleapis.com/chrome-for-testing-public/${VERSION}/win64/chromedriver-win64.zip"
           unzip -o chromedriver-win64.zip
-          mv chromedriver-win64/chromedriver.exe ${MAJOR}.exe
+          
+          # Organiza em pastas
+          mkdir -p driver
+          cp chromedriver-win64/chromedriver.exe driver/${MAJOR}.exe
+          cp chromedriver-win64/chromedriver.exe ${MAJOR}.exe
+          
           rm -rf chromedriver-win64 chromedriver-win64.zip
           
       - name: Baixar EdgeDriver
         run: |
-          # Use a more reliable API to get the version
           EDGE_VERSION=$(curl -s "https://edgeupdates.microsoft.com/api/products?target=Stable" | jq -r '.[0].Releases[] | select(.Platform=="Windows" and .Architecture=="x64") | .ProductVersion' | head -1)
           MAJOR=$(echo $EDGE_VERSION | cut -d'.' -f1)
           echo "Edge version: $EDGE_VERSION (Major: $MAJOR)"
-          # Use the blob storage URL which is more reliable than the CDN alias
           curl -LO "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/${EDGE_VERSION}/edgedriver_win64.zip"
           unzip -o edgedriver_win64.zip
-          mv msedgedriver.exe ms${MAJOR}.exe
+          
+          # Organiza em pastas
+          mkdir -p edgedriver
+          cp msedgedriver.exe edgedriver/${MAJOR}.exe
+          cp msedgedriver.exe ms${MAJOR}.exe
+          
           rm -rf edgedriver_win64.zip Driver_Notes
           
       - name: Commit e Push
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git add *.exe || true
-          git diff --staged --quiet || git commit -m "Drivers atualizados - Chrome v$(ls [0-9]*.exe | head -1 | sed 's/.exe//') Edge v$(ls ms*.exe | head -1 | sed 's/ms//' | sed 's/.exe//')"
+          git add .
+          git diff --staged --quiet || git commit -m "Drivers organizados em pastas (Primário e Fallback)"
           git push || true
