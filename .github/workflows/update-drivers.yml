@@ -1,4 +1,4 @@
-name: Atualizar ChromeDrivers
+name: Atualizar Drivers
 
 on:
   schedule:
@@ -14,21 +14,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Baixar ChromeDriver mais recente
+      - name: Baixar ChromeDriver
         run: |
           VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json | jq -r '.channels.Stable.version')
           MAJOR=$(echo $VERSION | cut -d'.' -f1)
           echo "Chrome version: $VERSION (Major: $MAJOR)"
-          
           curl -LO "https://storage.googleapis.com/chrome-for-testing-public/${VERSION}/win64/chromedriver-win64.zip"
           unzip -o chromedriver-win64.zip
           mv chromedriver-win64/chromedriver.exe ${MAJOR}.exe
           rm -rf chromedriver-win64 chromedriver-win64.zip
+          
+      - name: Baixar EdgeDriver
+        run: |
+          EDGE_VERSION=$(curl -s "https://msedgedriver.azureedge.net/LATEST_STABLE" | tr -d '\r\n')
+          MAJOR=$(echo $EDGE_VERSION | cut -d'.' -f1)
+          echo "Edge version: $EDGE_VERSION (Major: $MAJOR)"
+          curl -LO "https://msedgedriver.azureedge.net/${EDGE_VERSION}/edgedriver_win64.zip"
+          unzip -o edgedriver_win64.zip
+          mv msedgedriver.exe ms${MAJOR}.exe
+          rm -rf edgedriver_win64.zip Driver_Notes
           
       - name: Commit e Push
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add *.exe || true
-          git diff --staged --quiet || git commit -m "ChromeDriver atualizado para v${MAJOR}"
+          git diff --staged --quiet || git commit -m "Drivers atualizados - Chrome v$(ls [0-9]*.exe | head -1 | sed 's/.exe//') Edge v$(ls ms*.exe | head -1 | sed 's/ms//' | sed 's/.exe//')"
           git push || true
