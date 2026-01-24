@@ -53,7 +53,7 @@ jobs:
           echo "WA-JS version: $WAJS_VERSION"
           curl -LO "https://github.com/wppconnect-team/wa-js/releases/download/${WAJS_VERSION}/wppconnect-wa.js"
           mkdir -p wapi_temp
-          mv wppconnect-wa.js wapi_temp/
+          mv wppconnect-wa.js wapi_temp/wapi.js
           cd wapi_temp && zip -r ../update.zip . && cd ..
           rm -rf wapi_temp
           CURRENT_VERSION=$(cat internalupdateversion.txt 2>/dev/null || echo "0")
