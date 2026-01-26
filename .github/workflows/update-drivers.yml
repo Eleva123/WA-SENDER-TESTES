@@ -1,12 +1,10 @@
-name: Atualizar Drivers
-
+name: Atualizar Drivers e Scripts
 
 on:
   schedule:
     - cron: '0 9 * * *'    # 06:00 AM Brasilia
     - cron: '30 15 * * *'  # 12:30 PM Brasilia
   workflow_dispatch:
-
 
 jobs:
   update:
@@ -17,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      # --- ATUALIZAÇÃO DOS DRIVERS (CHROME/EDGE) ---
       - name: Baixar ChromeDriver
         run: |
           VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json | jq -r '.channels.Stable.version')
@@ -24,12 +23,9 @@ jobs:
           echo "Chrome version: $VERSION (Major: $MAJOR)"
           curl -LO "https://storage.googleapis.com/chrome-for-testing-public/${VERSION}/win64/chromedriver-win64.zip"
           unzip -o chromedriver-win64.zip
-          
-          # Organiza em pastas
           mkdir -p driver
           cp chromedriver-win64/chromedriver.exe driver/${MAJOR}.exe
           cp chromedriver-win64/chromedriver.exe ${MAJOR}.exe
-          
           rm -rf chromedriver-win64 chromedriver-win64.zip
           
       - name: Baixar EdgeDriver
@@ -39,23 +35,34 @@ jobs:
           echo "Edge version: $EDGE_VERSION (Major: $MAJOR)"
           curl -LO "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/${EDGE_VERSION}/edgedriver_win64.zip"
           unzip -o edgedriver_win64.zip
-          
-          # Organiza em pastas
           mkdir -p edgedriver
           cp msedgedriver.exe edgedriver/${MAJOR}.exe
           cp msedgedriver.exe ms${MAJOR}.exe
-          
           rm -rf edgedriver_win64.zip Driver_Notes
 
-      - name: Baixar WPP.js Scripts
+      # --- CRIAÇÃO DO UPDATE.ZIP (CORREÇÃO DO PROBLEMA) ---
+      - name: Baixar WPP e Empacotar Scripts
         run: |
+          mkdir -p update_temp
+          
+          # 1. Baixa WPPConnect (WhatsApp) da internet -> Salva como wppconnect-wa.js
           WAJS_VERSION=$(curl -s https://api.github.com/repos/wppconnect-team/wa-js/releases/latest | jq -r '.tag_name')
-          echo "WA-JS version: $WAJS_VERSION"
-          curl -LO "https://github.com/wppconnect-team/wa-js/releases/download/${WAJS_VERSION}/wppconnect-wa.js"
-          mkdir -p wapi_temp
-          mv wppconnect-wa.js wapi_temp/wapi.js
-          cd wapi_temp && zip -r ../update.zip . && cd ..
-          rm -rf wapi_temp
+          echo "Baixando WA-JS versao: $WAJS_VERSION"
+          curl -L "https://github.com/wppconnect-team/wa-js/releases/download/${WAJS_VERSION}/wppconnect-wa.js" -o update_temp/wppconnect-wa.js
+          
+          # 2. Copia seu wapi.js (Maps) local -> Salva como wapi.js
+          if [ -f "wapi.js" ]; then
+             echo "Copiando wapi.js local..."
+             cp wapi.js update_temp/wapi.js
+          else
+             echo "AVISO: wapi.js nao encontrado no repositorio! O Maps pode falhar."
+          fi
+
+          # 3. Zipa os dois arquivos juntos
+          cd update_temp && zip -r ../update.zip . && cd ..
+          rm -rf update_temp
+
+          # 4. Incrementa versão
           CURRENT_VERSION=$(cat internalupdateversion.txt 2>/dev/null || echo "0")
           NEW_VERSION=$((CURRENT_VERSION + 1))
           echo $NEW_VERSION > internalupdateversion.txt
@@ -65,5 +72,5 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add .
-          git diff --staged --quiet || git commit -m "Drivers e Scripts organizados (Primário e Fallback)"
+          git diff --staged --quiet || git commit -m "Auto-update: Drivers + Scripts Corrigidos"
           git push || true
