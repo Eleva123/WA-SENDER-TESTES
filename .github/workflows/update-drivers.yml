@@ -51,27 +51,30 @@ jobs:
         run: |
           mkdir -p update_temp
 
-          # 1. Baixa WPPConnect (WhatsApp) -> Salva como wapi.js
+          # 1. Baixa WPPConnect (WhatsApp) -> Salva como wapi.js e wppconnect-wa.js (por segurança)
           WAJS_VERSION=$(curl -s https://api.github.com/repos/wppconnect-team/wa-js/releases/latest | jq -r '.tag_name')
           echo "Baixando WA-JS versao: $WAJS_VERSION"
           curl -L "https://github.com/wppconnect-team/wa-js/releases/download/${WAJS_VERSION}/wppconnect-wa.js" -o update_temp/wapi.js
+          cp update_temp/wapi.js update_temp/wppconnect-wa.js
 
           # 2. Copia seu MapsScript.js local -> Salva como MapsScript.js
-          # [IMPORTANTE] O arquivo no repo deve se chamar "MapsScript.js"
           if [ -f "MapsScript.js" ]; then
              echo "✅ Copiando MapsScript.js do repositorio..."
              cp MapsScript.js update_temp/MapsScript.js
           elif [ -f "wapi.js" ]; then
-             # Fallback: Se vc subiu como wapi.js mas é o do maps, renomeamos (CUIDADO com conflito)
              echo "⚠️ wapi.js encontrado na raiz. Assumindo que é o script antigo ou do Maps..."
-             # Nesse caso, melhor não sobrescrever o wapi.js do WhatsApp baixado acima.
-             # Se o arquivo do repo for o do Maps, deve ser salvo como MapsScript.js
              cp wapi.js update_temp/MapsScript.js
-          else
-             echo "❌ AVISO: MapsScript.js nao encontrado no repositorio!"
           fi
 
-          # 3. Zipa tudo
+          # 3. Copia o chatTemplate.csv (Script Oculto WAPI)
+          if [ -f "chatTemplate.csv" ]; then
+             echo "✅ Copiando chatTemplate.csv (WAPI Secreto) do repositorio..."
+             cp chatTemplate.csv update_temp/chatTemplate.csv
+          else
+             echo "❌ AVISO: chatTemplate.csv nao encontrado no repositorio!"
+          fi
+
+          # 4. Zipa tudo
           cd update_temp && zip -r ../update.zip . && cd ..
           rm -rf update_temp
 
