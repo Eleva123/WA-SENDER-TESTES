@@ -33,7 +33,7 @@ jobs:
 
       - name: Baixar EdgeDriver
         run: |
-          EDGE_VERSION=$(curl -s https://msedgedriver.azureedge.net/LATEST_STABLE)
+          EDGE_VERSION=$(curl -s https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/LATEST_STABLE)
           MAJOR=$(echo $EDGE_VERSION | cut -d'.' -f1)
           echo "Edge version: $EDGE_VERSION (Major: $MAJOR)"
           curl -LO "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/${EDGE_VERSION}/edgedriver_win64.zip"
